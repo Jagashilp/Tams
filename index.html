@@ -45,6 +45,17 @@ input,textarea{width:100%;background:#000;border:1px solid #3a1215;color:var(--t
 .ord{border-bottom:1px solid #2a0a0d;padding:8px 0;font-size:16px}
 footer{text-align:center;margin:40px 0 20px;color:var(--mut);font-size:15px}
 footer a{cursor:pointer;text-decoration:underline}
+.ok{text-align:center}.ok h3{color:#2ecc71;font-size:20px;margin:0 0 12px}
+.modal.show .box{animation:pop .3s ease-out}
+@keyframes pop{from{transform:scale(.85);opacity:0}}
+.tick{width:84px;height:84px;display:block;margin:0 auto 10px}
+.tick circle{stroke-dasharray:151;stroke-dashoffset:151;animation:dr .6s forwards}
+.tick path{stroke-dasharray:50;stroke-dashoffset:50;animation:dr .4s .5s forwards}
+@keyframes dr{to{stroke-dashoffset:0}}
+.sum{border-top:1px solid #2a0a0d;text-align:left;font-size:17px}
+.sum div{display:flex;justify-content:space-between;gap:12px;padding:7px 0;border-bottom:1px solid #2a0a0d}
+.sum span{color:var(--mut)}
+.door{font-style:italic;color:var(--red2);margin:12px 0 4px}
 </style>
 </head>
 <body>
@@ -74,15 +85,13 @@ No two readers ever agreed on what came through. They only agree on one thing: o
 </main>
 <footer>© TAMAS · <a id="seeOrders">Orders (<span id="oc">0</span>)</a></footer>
 
-<div class="modal" id="m1"><div class="box">
-  <h3>Place Your Order</h3>
-  <input id="n" placeholder="Your name">
-  <input id="p" type="tel" placeholder="Phone number">
-  <textarea id="a" rows="3" placeholder="Full address"></textarea>
-  <div class="row"><input id="q" type="number" min="1" value="1" style="max-width:90px"><button class="buy" id="place">PLACE ORDER</button></div>
-  <button class="ghost" data-close>Cancel</button>
+<div class="modal" id="m2"><div class="box ok">
+  <svg class="tick" viewBox="0 0 52 52"><circle cx="26" cy="26" r="24" fill="none" stroke="#2ecc71" stroke-width="3"/><path d="M15 27l8 8 15-17" fill="none" stroke="#2ecc71" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+  <h3>Order Placed Successfully!</h3>
+  <div class="sum" id="ok"></div>
+  <p class="door">The door is now open.</p>
+  <button class="buy" data-close>OK</button>
 </div></div>
-<div class="modal" id="m2"><div class="box"><h3>Order Placed</h3><p id="ok"></p><button class="ghost" data-close>Close</button></div></div>
 <div class="modal" id="m3"><div class="box"><h3>All Orders</h3><div id="list"></div><button class="ghost" data-close style="margin-top:10px">Close</button></div></div>
 
 <script>
@@ -132,20 +141,16 @@ const orders=()=>{try{return JSON.parse(get('orders','[]'))}catch(e){return[]}};
 const refresh=()=>$('oc').textContent=orders().length;refresh();
 const open=id=>$(id).classList.add('show');
 document.querySelectorAll('[data-close]').forEach(b=>b.onclick=()=>b.closest('.modal').classList.remove('show'));
-$('buy').onclick=()=>open('m1');
-function esc(s){const d=document.createElement('div');d.textContent=s;return d.innerHTML}
-$('place').onclick=()=>{
-  const n=$('n').value.trim(),p=$('p').value.trim(),a=$('a').value.trim(),q=Math.max(1,+$('q').value||1);
-  if(!n||p.length<10||!a){alert('Please enter your name, a valid phone number and address.');return}
-  const o={id:'TMS'+Date.now().toString().slice(-7),n,p,a,q,total:q*(+$('price').textContent||0),t:new Date().toLocaleString('en-IN')};
+$('buy').onclick=()=>{
+  const o={id:'TMS'+Date.now().toString().slice(-7),item:$('title').textContent,total:+$('price').textContent||0,t:new Date().toLocaleString('en-IN')};
   const l=orders();l.push(o);set('orders',JSON.stringify(l));refresh();
-  $('m1').classList.remove('show');
-  $('ok').innerHTML='Thank you, <b>'+esc(n)+'</b>. Your order has been placed.<br>Order ID: <b>'+o.id+'</b><br>Total: ₹'+o.total+'<br><br><i>The door is now open.</i>';
-  open('m2');['n','p','a'].forEach(i=>$(i).value='');
+  $('ok').innerHTML='<div><span>Order ID</span><b>'+o.id+'</b></div><div><span>Item</span><b>'+esc(o.item)+'</b></div><div><span>Amount</span><b>₹'+o.total+'</b></div><div><span>Placed on</span><b>'+esc(o.t)+'</b></div>';
+  open('m2');
 };
+function esc(s){const d=document.createElement('div');d.textContent=s;return d.innerHTML}
 $('seeOrders').onclick=()=>{
   const l=orders().slice().reverse();
-  $('list').innerHTML=l.length?l.map(o=>'<div class="ord"><b>'+o.id+'</b> · '+esc(o.t)+'<br>'+esc(o.n)+' · '+esc(o.p)+'<br>'+esc(o.a)+'<br>Qty '+o.q+' · ₹'+o.total+'</div>').join(''):'No orders yet.';
+  $('list').innerHTML=l.length?l.map(o=>'<div class="ord"><b>'+o.id+'</b> · '+esc(o.t)+'<br>'+(o.n?esc(o.n)+' · '+esc(o.p)+'<br>'+esc(o.a)+'<br>':'')+esc(o.item||'TAMAS')+' · ₹'+o.total+'</div>').join(''):'No orders yet.';
   open('m3');
 };
 </script>
